@@ -7,45 +7,68 @@ import os
 app = Flask(__name__)
 CORS(app)
 
-# --- Naya Performance State ---
+# --- GLOBAL STATE (Saara data yahan store hoga) ---
 STATE = {
     "running": False,
     "exchange": None,
     "coin": "BTC/USDT",
     "price": 0.0,
-    "message": "Waiting for Bitget Keys...",
+    "message": "Wolf Engine Online! Waiting for Keys...",
     "wins": 0,
     "loss": 0,
-    "profit_pct": 0.0,
-    "total_trades": 0
+    "total_trades": 0,
+    "last_signal": "SCANNING"
 }
 
-def get_performance_stats(exchange, symbol):
+# --- LOGIC: Signal & Ticker ---
+def get_market_data():
     try:
-        # Live Price aur RSI check
+        ex = ccxt.bitget()
+        tickers = ex.fetch_tickers()
+        # Top 20 Trending Coins for Ticker
+        top_20 = sorted(tickers.values(), key=lambda x: x['quoteVolume'], reverse=True)[:20]
+        ticker_text = " 🔥 "
+        for coin in top_20:
+            sym = coin['symbol'].split('/')
+            change = round(coin['percentage'], 2)
+            icon = "🟢" if change >= 0 else "🔴"
+            ticker_text += f" | {sym}: ${coin['last']} {icon}{change}% "
+        return ticker_text
+    except:
+        return "Market Connection Refreshing..."
+
+def calculate_signal(exchange, symbol):
+    try:
         bars = exchange.fetch_ohlcv(symbol, timeframe='15m', limit=50)
         df = pd.DataFrame(bars, columns=['t', 'o', 'h', 'l', 'c', 'v'])
-        last_price = df['c'].iloc[-1]
+        delta = df['c'].diff()
+        gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
+        loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
+        rsi = 100 - (100 / (1 + (gain / loss))).iloc[-1]
+        price = df['c'].iloc[-1]
         
-        # Win/Loss logic (Bitget se closed trades uthayega)
-        # Abhi ke liye hum ise tracker mein save rakhenge
-        return last_price
+        if rsi < 35: return "BUY", price, rsi
+        elif rsi > 70: return "SELL", price, rsi
+        return "WAIT", price, rsi
     except:
-        return 0
+        return "ERROR", 0, 0
 
+# --- ROUTES ---
 @app.route('/')
 def home():
     return send_file('index.html')
 
 @app.route('/status', methods=['GET'])
 def status():
+    ticker = get_market_data()
     if STATE['running'] and STATE['exchange']:
-        price = get_performance_stats(STATE['exchange'], STATE['coin'])
+        sig, price, rsi = calculate_signal(STATE['exchange'], STATE['coin'])
         STATE['price'] = price
-        # Win Rate calculation
+        STATE['last_signal'] = sig
         wr = (STATE['wins'] / STATE['total_trades'] * 100) if STATE['total_trades'] > 0 else 0
-        STATE['message'] = f"Wins: {STATE['wins']} | Loss: {STATE['loss']} | Win Rate: {wr:.1f}%"
-    return jsonify(STATE)
+        STATE['message'] = f"Signal: {sig} | RSI: {rsi:.1f} | WinRate: {wr:.1f}%"
+    
+    return jsonify({**STATE, "ticker_line": ticker})
 
 @app.route('/start', methods=['POST'])
 def start():
