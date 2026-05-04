@@ -3,60 +3,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wolf-Hour AI Terminal</title>
+    <title>Wolf Hour Pro Terminal</title>
     <style>
-        :root { --green: #00ff88; --red: #ff4444; --bg: #050508; }
-        body { background: var(--bg); color: white; font-family: 'Courier New', monospace; padding: 15px; margin: 0; }
-        .accuracy-badge { background: rgba(0, 255, 136, 0.1); border: 1px solid var(--green); color: var(--green); padding: 5px 10px; border-radius: 20px; font-size: 10px; display: inline-block; margin-bottom: 15px; }
-        .card { background: #10101a; border-radius: 15px; padding: 20px; margin-bottom: 15px; border: 1px solid #1a1a2e; }
-        .live-price { font-size: 32px; font-weight: bold; color: var(--green); margin: 10px 0; }
-        input, select { width: 100%; padding: 12px; margin: 8px 0; background: #08080c; border: 1px solid #1a1a2e; color: white; border-radius: 8px; }
-        .btn-start { background: var(--green); color: black; width: 100%; padding: 15px; border-radius: 10px; font-weight: bold; border: none; cursor: pointer; }
-        .status-msg { font-size: 12px; color: #888; border-left: 3px solid var(--green); padding-left: 10px; }
+        body { background: #050505; color: #00ff00; font-family: 'Courier New', monospace; margin: 0; padding: 20px; text-align: center; }
+        .box { border: 1px solid #333; padding: 20px; margin: 10px auto; max-width: 400px; background: #0a0a0a; border-radius: 8px; }
+        input { width: 90%; padding: 10px; margin: 5px; background: #111; border: 1px solid #444; color: #fff; border-radius: 5px; }
+        button { width: 95%; padding: 12px; background: #008800; color: white; border: none; font-weight: bold; cursor: pointer; border-radius: 5px; margin-top: 10px; }
+        #ticker { position: fixed; bottom: 0; left: 0; width: 100%; background: #111; color: #fff; padding: 10px 0; border-top: 2px solid #00ff00; }
+        .price-big { font-size: 2.5em; color: #fff; margin: 10px 0; }
     </style>
 </head>
 <body>
-    <div class="accuracy-badge">🛡️ AI ACCURACY FILTER: ACTIVE (EMA 200 + RSI)</div>
+
+    <h2>🐺 WOLF HOUR PRO</h2>
     
-    <div class="card">
-        <label>EXCHANGE & ASSET</label>
-        <select id="ex"><option value="bitget">Bitget</option><option value="mexc">MEXC</option></select>
-        <select id="coin"><option value="BTC/USDT">Bitcoin</option><option value="SOL/USDT">Solana</option></select>
+    <div class="box">
+        <div id="price" class="price-big">$00,000.00</div>
+        <div id="status-msg">Waiting for Bitget API...</div>
     </div>
 
-    <div class="card">
-        <div style="font-size: 10px; color: #888;">LIVE MARKET PRICE</div>
-        <div class="live-price" id="price">$00,000.00</div>
-        <div class="status-msg" id="msg">Waiting for connection...</div>
+    <div class="box">
+        <input type="text" id="apiKey" placeholder="Bitget API Key">
+        <input type="password" id="apiSecret" placeholder="Bitget API Secret">
+        <input type="password" id="passphrase" placeholder="API Passphrase">
+        <input type="text" id="coin" value="BTC/USDT">
+        <button onclick="startEngine()">START SECURE ENGINE</button>
     </div>
 
-    <div class="card">
-        <input type="text" id="key" placeholder="API Key">
-        <input type="password" id="secret" placeholder="API Secret">
-        <button class="btn-start" onclick="startBot()">START SECURE ENGINE</button>
+    <div id="ticker">
+        <marquee id="ticker-text" scrollamount="6">Connecting to Global Market Ticker...</marquee>
     </div>
 
     <script>
-        function startBot() {
-            const payload = {
-                exchange: document.getElementById('ex').value,
-                coin: document.getElementById('coin').value,
-                apiKey: document.getElementById('key').value,
-                apiSecret: document.getElementById('secret').value
+        async function startEngine() {
+            const data = {
+                apiKey: document.getElementById('apiKey').value,
+                apiSecret: document.getElementById('apiSecret').value,
+                passphrase: document.getElementById('apiSecret').value, // Bitget Password
+                coin: document.getElementById('coin').value
             };
-            fetch('/start', {
+            const res = await fetch('/start', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(payload)
+                body: JSON.stringify(data)
             });
-            
-            setInterval(() => {
-                fetch('/status').then(r => r.json()).then(data => {
-                    document.getElementById('price').innerText = "$" + data.price.toLocaleString();
-                    document.getElementById('msg').innerText = data.message;
-                });
-            }, 3000);
+            const result = await res.json();
+            if(result.status === 'success') alert("Engine Started, Bhai!");
         }
+
+        setInterval(async () => {
+            try {
+                const res = await fetch('/status');
+                const data = await res.json();
+                document.getElementById('price').innerText = `$${data.price}`;
+                document.getElementById('status-msg').innerText = data.message;
+                document.getElementById('ticker-text').innerText = data.ticker_line;
+            } catch (e) {}
+        }, 5000);
     </script>
 </body>
 </html>
