@@ -7,43 +7,44 @@ import os
 app = Flask(__name__)
 CORS(app)
 
-# State initialization
+# --- Naya Performance State ---
 STATE = {
     "running": False,
     "exchange": None,
     "coin": "BTC/USDT",
     "price": 0.0,
-    "message": "Wolf Engine Online! Waiting for Bitget Keys...",
+    "message": "Waiting for Bitget Keys...",
+    "wins": 0,
+    "loss": 0,
+    "profit_pct": 0.0,
+    "total_trades": 0
 }
 
-def calculate_accuracy_signal(exchange, symbol):
+def get_performance_stats(exchange, symbol):
     try:
-        # Simple manual RSI calculation for accuracy
+        # Live Price aur RSI check
         bars = exchange.fetch_ohlcv(symbol, timeframe='15m', limit=50)
         df = pd.DataFrame(bars, columns=['t', 'o', 'h', 'l', 'c', 'v'])
-        delta = df['c'].diff()
-        gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
-        loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
-        rsi = 100 - (100 / (1 + (gain / loss))).iloc[-1]
         last_price = df['c'].iloc[-1]
         
-        if rsi < 35: return "BUY", last_price
-        elif rsi > 70: return "SELL", last_price
-        return "WAIT", last_price
+        # Win/Loss logic (Bitget se closed trades uthayega)
+        # Abhi ke liye hum ise tracker mein save rakhenge
+        return last_price
     except:
-        return "ERROR", 0
+        return 0
 
 @app.route('/')
 def home():
-    # Seedha file name use karo, Render ke liye yahi best hai
     return send_file('index.html')
 
 @app.route('/status', methods=['GET'])
 def status():
     if STATE['running'] and STATE['exchange']:
-        signal, price = calculate_accuracy_signal(STATE['exchange'], STATE['coin'])
+        price = get_performance_stats(STATE['exchange'], STATE['coin'])
         STATE['price'] = price
-        STATE['message'] = f"Strategy: {signal} | Price: ${price}"
+        # Win Rate calculation
+        wr = (STATE['wins'] / STATE['total_trades'] * 100) if STATE['total_trades'] > 0 else 0
+        STATE['message'] = f"Wins: {STATE['wins']} | Loss: {STATE['loss']} | Win Rate: {wr:.1f}%"
     return jsonify(STATE)
 
 @app.route('/start', methods=['POST'])
@@ -64,7 +65,6 @@ def start():
         return jsonify({"status": "error", "message": str(e)})
 
 if __name__ == '__main__':
-    # Render ke liye default port 10000 hi rakho
     port = int(os.environ.get('PORT', 10000))
     app.run(host='0.0.0.0', port=port)
     
