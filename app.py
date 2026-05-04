@@ -7,7 +7,7 @@ import os
 app = Flask(__name__)
 CORS(app)
 
-# --- GLOBAL STATE (Saara data yahan store hoga) ---
+# --- GLOBAL STATE ---
 STATE = {
     "running": False,
     "exchange": None,
@@ -20,22 +20,23 @@ STATE = {
     "last_signal": "SCANNING"
 }
 
-# --- LOGIC: Signal & Ticker ---
-def get_market_data():
+# --- LOGIC: Ticker & Signals ---
+def get_market_ticker():
     try:
         ex = ccxt.bitget()
         tickers = ex.fetch_tickers()
-        # Top 20 Trending Coins for Ticker
+        # Top 20 volume coins for the scrolling line
         top_20 = sorted(tickers.values(), key=lambda x: x['quoteVolume'], reverse=True)[:20]
-        ticker_text = " 🔥 "
+        ticker_line = ""
         for coin in top_20:
             sym = coin['symbol'].split('/')
+            price = coin['last']
             change = round(coin['percentage'], 2)
             icon = "🟢" if change >= 0 else "🔴"
-            ticker_text += f" | {sym}: ${coin['last']} {icon}{change}% "
-        return ticker_text
+            ticker_line += f" &nbsp;&nbsp;&nbsp; {sym}: ${price} {icon} {change}% &nbsp;&nbsp;&nbsp; |"
+        return ticker_line
     except:
-        return "Market Connection Refreshing..."
+        return "Connecting to Global Market..."
 
 def calculate_signal(exchange, symbol):
     try:
@@ -44,7 +45,8 @@ def calculate_signal(exchange, symbol):
         delta = df['c'].diff()
         gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
         loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
-        rsi = 100 - (100 / (1 + (gain / loss))).iloc[-1]
+        rs = gain / loss
+        rsi = 100 - (100 / (1 + rs)).iloc[-1]
         price = df['c'].iloc[-1]
         
         if rsi < 35: return "BUY", price, rsi
@@ -60,15 +62,15 @@ def home():
 
 @app.route('/status', methods=['GET'])
 def status():
-    ticker = get_market_data()
+    ticker_content = get_market_ticker()
     if STATE['running'] and STATE['exchange']:
         sig, price, rsi = calculate_signal(STATE['exchange'], STATE['coin'])
         STATE['price'] = price
         STATE['last_signal'] = sig
         wr = (STATE['wins'] / STATE['total_trades'] * 100) if STATE['total_trades'] > 0 else 0
-        STATE['message'] = f"Signal: {sig} | RSI: {rsi:.1f} | WinRate: {wr:.1f}%"
+        STATE['message'] = f"Strategy: {sig} | RSI: {rsi:.1f} | WinRate: {wr:.1f}%"
     
-    return jsonify({**STATE, "ticker_line": ticker})
+    return jsonify({**STATE, "ticker": ticker_content})
 
 @app.route('/start', methods=['POST'])
 def start():
