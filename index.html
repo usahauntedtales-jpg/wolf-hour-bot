@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wolf-Hour AI Terminal</title>
+    <style>
+        :root { --green: #00ff88; --red: #ff4444; --bg: #050508; }
+        body { background: var(--bg); color: white; font-family: 'Courier New', monospace; padding: 15px; margin: 0; }
+        .accuracy-badge { background: rgba(0, 255, 136, 0.1); border: 1px solid var(--green); color: var(--green); padding: 5px 10px; border-radius: 20px; font-size: 10px; display: inline-block; margin-bottom: 15px; }
+        .card { background: #10101a; border-radius: 15px; padding: 20px; margin-bottom: 15px; border: 1px solid #1a1a2e; }
+        .live-price { font-size: 32px; font-weight: bold; color: var(--green); margin: 10px 0; }
+        input, select { width: 100%; padding: 12px; margin: 8px 0; background: #08080c; border: 1px solid #1a1a2e; color: white; border-radius: 8px; }
+        .btn-start { background: var(--green); color: black; width: 100%; padding: 15px; border-radius: 10px; font-weight: bold; border: none; cursor: pointer; }
+        .status-msg { font-size: 12px; color: #888; border-left: 3px solid var(--green); padding-left: 10px; }
+    </style>
+</head>
+<body>
+    <div class="accuracy-badge">🛡️ AI ACCURACY FILTER: ACTIVE (EMA 200 + RSI)</div>
+    
+    <div class="card">
+        <label>EXCHANGE & ASSET</label>
+        <select id="ex"><option value="bitget">Bitget</option><option value="mexc">MEXC</option></select>
+        <select id="coin"><option value="BTC/USDT">Bitcoin</option><option value="SOL/USDT">Solana</option></select>
+    </div>
+
+    <div class="card">
+        <div style="font-size: 10px; color: #888;">LIVE MARKET PRICE</div>
+        <div class="live-price" id="price">$00,000.00</div>
+        <div class="status-msg" id="msg">Waiting for connection...</div>
+    </div>
+
+    <div class="card">
+        <input type="text" id="key" placeholder="API Key">
+        <input type="password" id="secret" placeholder="API Secret">
+        <button class="btn-start" onclick="startBot()">START SECURE ENGINE</button>
+    </div>
+
+    <script>
+        function startBot() {
+            const payload = {
+                exchange: document.getElementById('ex').value,
+                coin: document.getElementById('coin').value,
+                apiKey: document.getElementById('key').value,
+                apiSecret: document.getElementById('secret').value
+            };
+            fetch('/start', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(payload)
+            });
+            
+            setInterval(() => {
+                fetch('/status').then(r => r.json()).then(data => {
+                    document.getElementById('price').innerText = "$" + data.price.toLocaleString();
+                    document.getElementById('msg').innerText = data.message;
+                });
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
