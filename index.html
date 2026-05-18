@@ -1,85 +1,150 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wolf Hour Pro Terminal</title>
-    <style>
-        body { background: #080808; color: #00ff00; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 15px; text-align: center; overflow-x: hidden; }
-        .terminal { border: 1px solid #1a1a1a; padding: 25px; margin: 10px auto; max-width: 450px; background: #0d0d0d; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .price-display { font-size: 3em; color: #fff; font-weight: bold; margin: 15px 0; text-shadow: 0 0 10px rgba(255,255,255,0.2); }
-        input { width: 90%; padding: 12px; margin: 8px 0; background: #151515; border: 1px solid #222; color: #fff; border-radius: 6px; outline: none; }
-        button { width: 95%; padding: 15px; background: #00c853; color: #000; border: none; font-weight: bold; cursor: pointer; border-radius: 6px; font-size: 1em; text-transform: uppercase; margin-top: 10px; }
-        .status-box { color: #888; font-size: 0.9em; margin-bottom: 20px; border-bottom: 1px solid #222; padding-bottom: 10px; }
-        #ticker-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: #000; color: #fff; padding: 12px 0; border-top: 1px solid #00ff00; font-family: monospace; z-index: 1000; }
-    </style>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"/>
+<title>Wolf Master Terminal v19 Mega Edition</title>
+<style>
+  :root { --bg:#05050a; --bg2:#0d0d16; --primary:#00ff9d; --text:#e8e8f0; --border:#1e1e2e; --win:#00ff9d; --loss:#ff3366; }
+  body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; margin: 0; padding: 5px; overflow-x: hidden; }
+  .header { display: flex; justify-content: space-between; align-items: center; padding: 10px; }
+  .logo { font-weight: 900; font-size: 15px; color: var(--primary); letter-spacing: 1px; text-transform: uppercase; }
+  .ticker-wrapper { height: 40px; margin-bottom: 2px; border-bottom: 1px solid var(--border); }
+  .news-bar { height: 25px; background: rgba(0,255,157,0.05); border-bottom: 1px solid var(--border); overflow: hidden; display: flex; align-items: center; margin-bottom: 8px; }
+  .chart-wrapper { width: 100%; height: 480px; border-radius: 12px; border: 1px solid var(--border); background: #000; margin-bottom: 15px; overflow: hidden; }
+  .market-columns { display: flex; flex-direction: row; gap: 10px; width: 100%; overflow-x: auto; padding-bottom: 10px; -webkit-overflow-scrolling: touch; }
+  .column { flex: 0 0 88%; max-width: 450px; background: var(--bg2); border-radius: 12px; border: 1px solid var(--border); height: 750px; overflow-y: auto; }
+  @media (min-width: 1024px) { .column { flex: 1; } }
+  .list-header { font-size: 11px; font-weight: 800; color: var(--primary); padding: 15px; border-bottom: 1px solid var(--border); text-align: center; background: rgba(0,255,157,0.05); position: sticky; top: 0; z-index: 100; text-transform: uppercase; }
+  .trading-panel { background: var(--bg2); padding: 18px; border-radius: 15px; border: 1px solid var(--border); margin-top: 10px; margin-bottom: 20px; }
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+  .stat-box { background: #000; padding: 12px; border-radius: 10px; border: 1px solid var(--border); text-align: center; }
+  .stat-label { font-size: 9px; color: #888; text-transform: uppercase; }
+  .stat-value { font-size: 15px; font-weight: 900; }
+  .bot-status { background: rgba(0,255,157,0.1); border: 1px solid var(--primary); border-radius: 10px; padding: 10px; margin-bottom: 15px; text-align: center; }
+  .bot-signal { font-size: 20px; font-weight: 900; color: var(--primary); }
+  .input-group input, .input-group select { width: 100%; background: #000; border: 1px solid var(--border); color: #fff; padding: 12px; border-radius: 8px; font-size: 13px; margin-bottom: 8px; box-sizing: border-box; outline: none; }
+  .btn-connect { width: 100%; background: var(--primary); color: #000; font-weight: 900; border: none; padding: 15px; border-radius: 10px; cursor: pointer; text-transform: uppercase; font-size: 14px; }
+  ::-webkit-scrollbar { display: none; }
+</style>
 </head>
 <body>
 
-    <div style="margin-top: 20px;">
-        <img src="https://img.icons8.com/color/96/wolf.png" width="50" style="vertical-align: middle;">
-        <h2 style="display: inline; margin-left: 10px; letter-spacing: 2px;">WOLF HOUR PRO</h2>
-    </div>
-    
-    <div class="terminal">
-        <div id="status-msg" class="status-box">SYSTEM: WAITING FOR AUTHORIZATION</div>
-        <div id="price" class="price-display">$00,000.00</div>
-        <div id="live-signal" style="font-weight: bold; font-size: 1.1em;">CONNECTING...</div>
-    </div>
+<div class="ticker-wrapper">
+  <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
+  {"symbols": [{"proName":"BINANCE:BTCUSDT","title":"BTC"},{"proName":"BINANCE:ETHUSDT","title":"ETH"},{"proName":"FX_IDC:XAUUSD","title":"GOLD"},{"proName":"NASDAQ:TSLA","title":"TESLA"},{"proName":"NASDAQ:NVDA","title":"NVIDIA"}],"colorTheme":"dark","isTransparent":true,"displayMode":"adaptive","locale":"en"}
+  </script>
+</div>
 
-    <div class="terminal">
-        <input type="text" id="apiKey" placeholder="BITGET API KEY">
-        <input type="password" id="apiSecret" placeholder="BITGET API SECRET">
-        <input type="password" id="passphrase" placeholder="API PASSPHRASE">
-        <input type="text" id="coin" value="BTC/USDT">
-        <button onclick="startEngine()">START SECURE ENGINE</button>
-    </div>
+<div class="news-bar">
+  <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
+  {"symbols": [{"description":"LIVE GLOBAL MARKET NEWS","proName":"NASDAQ:AAPL"}],"colorTheme":"dark","isTransparent":true,"displayMode":"regular","locale":"en"}
+  </script>
+</div>
 
-    <div id="ticker-bar">
-        <marquee id="scrolling-content" scrollamount="5">INITIALIZING MARKET TICKER DATA...</marquee>
-    </div>
+<div class="header">
+  <div class="logo">🐺 WOLF TERMINAL v19 MEGA</div>
+  <div id="engine-status" style="font-size: 9px; border: 1px solid var(--primary); padding: 2px 6px; border-radius: 4px; color: var(--primary); font-weight: 800;">ENGINE ACTIVE</div>
+</div>
 
-    <script>
-        async function startEngine() {
-            const btn = document.querySelector('button');
-            btn.innerText = "STARTING...";
-            const data = {
-                apiKey: document.getElementById('apiKey').value,
-                apiSecret: document.getElementById('apiSecret').value,
-                passphrase: document.getElementById('passphrase').value,
-                coin: document.getElementById('coin').value
-            };
-            const res = await fetch('/start', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(data)
-            });
-            const result = await res.json();
-            if(result.status === 'success') {
-                alert("WOLF ENGINE DEPLOYED SUCCESSFULLY!");
-                btn.innerText = "ENGINE ACTIVE";
-                btn.style.background = "#222";
-                btn.style.color = "#00ff00";
-            } else {
-                alert("ERROR: " + result.message);
-                btn.innerText = "START SECURE ENGINE";
-            }
-        }
+<div class="bot-status">
+  <div style="font-size: 9px; color: #888; margin-bottom: 5px;">🤖 WOLF BRAIN V10 — LIVE BOT STATUS</div>
+  <div class="bot-signal" id="bot-signal">LOADING...</div>
+  <div style="display:flex; justify-content:space-around; margin-top:8px;">
+    <span style="font-size:11px; color:#888;">RSI: <span id="bot-rsi" style="color:var(--primary)">--</span></span>
+    <span style="font-size:11px; color:#888;">BTC: <span id="bot-price" style="color:var(--primary)">--</span></span>
+    <span style="font-size:11px; color:#888;">WIN%: <span id="bot-wr" style="color:var(--primary)">--</span></span>
+  </div>
+</div>
 
-        setInterval(async () => {
-            try {
-                const res = await fetch('/status');
-                const data = await res.json();
-                document.getElementById('price').innerText = `$${data.price.toLocaleString()}`;
-                document.getElementById('live-signal').innerText = data.message;
-                document.getElementById('scrolling-content').innerHTML = data.ticker;
-                
-                // Color switching for signals
-                if(data.last_signal === "BUY") document.getElementById('live-signal').style.color = "#00ff00";
-                else if(data.last_signal === "SELL") document.getElementById('live-signal').style.color = "#ff3d00";
-                else document.getElementById('live-signal').style.color = "#888";
-            } catch (e) {}
-        }, 5000);
+<div class="chart-wrapper">
+  <div id="tradingview_wolf" style="height:100%; width:100%;"></div>
+  <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+  <script type="text/javascript">
+  new TradingView.widget({
+    "autosize": true, "symbol": "BINANCE:BTCUSDT", "interval": "1", "timezone": "Etc/UTC", "theme": "dark", "style": "1", "locale": "en", "toolbar_bg": "#f1f3f6", "enable_publishing": false, "hide_side_toolbar": false, "allow_symbol_change": true, "container_id": "tradingview_wolf"
+  });
+  </script>
+</div>
+
+<div class="trading-panel">
+  <div class="stats-grid">
+    <div class="stat-box"><div class="stat-label">Total Wins</div><div id="win-count" class="stat-value" style="color:var(--win)">0</div></div>
+    <div class="stat-box"><div class="stat-label">Total Losses</div><div id="loss-count" class="stat-value" style="color:var(--loss)">0</div></div>
+    <div class="stat-box"><div class="stat-label">Total Trades</div><div id="trade-count" class="stat-value" style="color:white">0</div></div>
+    <div class="stat-box"><div class="stat-label">Portfolio</div><div id="portfolio-val" class="stat-value" style="color:var(--primary)">$0.00</div></div>
+    <div class="stat-box" style="grid-column: span 2;"><div class="stat-label">Net Profit / P&L Status</div><div id="profit-val" class="stat-value" style="color:white">$0.00</div></div>
+  </div>
+  
+  <div class="input-group">
+    <select id="exchange_select">
+      <option value="" disabled selected>--- SELECT BROKER / API ---</option>
+      <option value="bitget">Bitget (Primary Global)</option>
+      <option value="binance">Binance (Global)</option>
+      <option value="bybit">Bybit API</option>
+      <option value="okx">OKX V5 API</option>
+      <option value="mexc">MEXC Global</option>
+      <option value="kucoin">KuCoin</option>
+    </select>
+    <input type="text" placeholder="Trader ID / API Key">
+    <input type="password" placeholder="Password / Secret Key">
+  </div>
+  <button id="activate-btn" class="btn-connect">🐺 WOLF BOT ACTIVE</button>
+</div>
+
+<div class="market-columns">
+  <div class="column">
+    <div class="list-header">🚀 Crypto Top 50</div>
+    <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-market-overview.js" async>
+    {"colorTheme":"dark","showChart":false,"locale":"en","width":"100%","height":"100%","isTransparent":true,"tabs":[{"title":"Crypto","symbols":[
+      {"s":"BINANCE:BTCUSDT"},{"s":"BINANCE:ETHUSDT"},{"s":"BINANCE:SOLUSDT"},{"s":"BINANCE:BNBUSDT"},{"s":"BINANCE:XRPUSDT"},{"s":"BINANCE:ADAUSDT"},{"s":"BINANCE:DOGEUSDT"},{"s":"BINANCE:TRXUSDT"},{"s":"BINANCE:SHIBUSDT"},{"s":"BINANCE:AVAXUSDT"},{"s":"BINANCE:DOTUSDT"},{"s":"BINANCE:LINKUSDT"},{"s":"BINANCE:NEARUSDT"},{"s":"BINANCE:PEPEUSDT"},{"s":"BINANCE:SUIUSDT"},{"s":"BINANCE:ARBUSDT"},{"s":"BINANCE:OPUSDT"},{"s":"BINANCE:HBARUSDT"},{"s":"BINANCE:AAVEUSDT"},{"s":"BINANCE:MKRUSDT"},{"s":"BINANCE:LDOUSDT"},{"s":"BINANCE:FILUSDT"},{"s":"BINANCE:ICPUSDT"},{"s":"BINANCE:APTUSDT"},{"s":"BINANCE:LTCUSDT"},{"s":"BINANCE:BCHUSDT"},{"s":"BINANCE:UNIUSDT"}
+    ]}]}
     </script>
+  </div>
+  <div class="column">
+    <div class="list-header">⚖️ All Forex & MCX</div>
+    <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-market-overview.js" async>
+    {"colorTheme":"dark","showChart":false,"locale":"en","width":"100%","height":"100%","isTransparent":true,"tabs":[{"title":"FX/MCX","symbols":[
+      {"s":"FX:EURUSD"},{"s":"FX:GBPUSD"},{"s":"FX:USDJPY"},{"s":"FX:AUDUSD"},{"s":"FX:USDCAD"},{"s":"FX:USDCHF"},{"s":"FX:USDINR"},{"s":"OANDA:XAUUSD","d":"GOLD"},{"s":"OANDA:XAGUSD","d":"SILVER"},{"s":"TVC:USOIL","d":"CRUDE OIL"},{"s":"TVC:NATGAS","d":"NATGAS"},{"s":"CAPITALCOM:COPPER"},{"s":"CAPITALCOM:ALUMINUM"},{"s":"CAPITALCOM:NICKEL"},{"s":"CAPITALCOM:ZINC"},{"s":"CAPITALCOM:LEAD"}
+    ]}]}
+    </script>
+  </div>
+  <div class="column">
+    <div class="list-header">🇺🇸 USA Wall Street</div>
+    <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-market-overview.js" async>
+    {"colorTheme":"dark","showChart":false,"locale":"en","width":"100%","height":"100%","isTransparent":true,"tabs":[{"title":"Stocks","symbols":[
+      {"s":"NASDAQ:AAPL"},{"s":"NASDAQ:TSLA"},{"s":"NASDAQ:NVDA"},{"s":"NASDAQ:MSFT"},{"s":"NASDAQ:AMZN"},{"s":"NASDAQ:GOOGL"},{"s":"NASDAQ:META"},{"s":"NASDAQ:NFLX"},{"s":"NYSE:BABA"},{"s":"NASDAQ:AMD"},{"s":"NYSE:DIS"},{"s":"NYSE:WMT"},{"s":"NYSE:V"},{"s":"NYSE:MA"}
+    ]}]}
+    </script>
+  </div>
+</div>
+
+<script>
+function updateBotData() {
+  fetch('/api/status')
+  .then(r => r.json())
+  .then(d => {
+    document.getElementById('win-count').innerHTML = d.wins || 0;
+    document.getElementById('loss-count').innerHTML = d.losses || 0;
+    document.getElementById('trade-count').innerHTML = d.total_trades || 0;
+    document.getElementById('profit-val').innerHTML = '$' + (d.total_pnl || 0).toFixed(2);
+    document.getElementById('portfolio-val').innerHTML = '$' + (d.portfolio || 1000).toFixed(2);
+    document.getElementById('bot-signal').innerHTML = d.last_signal || 'WAIT';
+    document.getElementById('bot-rsi').innerHTML = d.rsi || '--';
+    document.getElementById('bot-price').innerHTML = d.price ? d.price.toFixed(0) : '--';
+    document.getElementById('bot-wr').innerHTML = (d.win_rate || 0) + '%';
+    
+    const sig = d.last_signal || '';
+    const el = document.getElementById('bot-signal');
+    if(sig === 'LONG') el.style.color = '#00ff9d';
+    else if(sig === 'SHORT') el.style.color = '#ff3366';
+    else el.style.color = '#F0B90B';
+  })
+  .catch(e => {});
+}
+
+setInterval(updateBotData, 5000);
+updateBotData();
+</script>
 </body>
 </html>
